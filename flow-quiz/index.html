@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>유세포분석 퀴즈</title>
+<style>
+body{font-family:"Malgun Gothic",sans-serif;max-width:720px;margin:0 auto;padding:20px;background:#f5f7fa;color:#222;line-height:1.6}
+h1{font-size:1.5rem}
+.q{background:#fff;border-radius:10px;padding:16px 18px;margin:16px 0;box-shadow:0 1px 4px #0002}
+.q h2{font-size:1.05rem;margin:0 0 4px}
+.src{font-size:.8rem;color:#777;margin-bottom:8px}
+label{display:block;padding:8px 10px;margin:4px 0;border:1px solid #ddd;border-radius:6px;cursor:pointer}
+label:hover{background:#eef4ff}
+.ok{background:#d9f7e0!important;border-color:#3aa856}
+.no{background:#fde0e0!important;border-color:#d44}
+.exp{display:none;margin-top:8px;padding:8px 10px;background:#fffbe6;border-radius:6px;font-size:.92rem}
+button{background:#2b6cb0;color:#fff;border:0;border-radius:8px;padding:10px 22px;font-size:1rem;cursor:pointer}
+#result{font-size:1.2rem;font-weight:bold;margin:14px 0}
+</style>
+</head>
+<body>
+<h1>유세포분석 퀴즈 (5문제)</h1>
+<p>각 문제에서 답을 고르고 맨 아래 «채점하기»를 누르세요.</p>
+<div id="quiz"></div>
+<button onclick="grade()">채점하기</button>
+<button onclick="location.reload()" style="background:#777">다시 풀기</button>
+<div id="result"></div>
+<script>
+const Q=[
+{t:"산란광에 대한 설명으로 옳은 것은?",s:"강의안 슬라이드 12",
+o:["FSC는 세포 내 과립의 상태를 반영한다.","SSC는 laser와 같은 축으로 산란되는 빛이며 세포 크기에 비례한다.","FSC는 세포의 크기와 비례한다.","SSC는 형광색소의 발광을 측정한 값이다.","림프구는 백혈구 중 FSC와 SSC가 모두 가장 크다."],
+a:2,e:"FSC는 세포 크기와 비례하고, SSC는 90° 방향 산란으로 과립 상태를 반영합니다. 림프구는 FSC와 SSC가 가장 작습니다."},
+{t:"림프구 아형검사에서 CD45/SSC gating을 FSC/SSC gating보다 권장하는 이유로 옳은 것은?",s:"슬라이드 37~42",
+o:["형광색소 수를 줄일 수 있어서","림프구를 더 많이 포함하고 순도도 높으며, 다른 백혈구 오염에 대한 교정이 필요 없어서","적혈구를 용혈할 필요가 없어서","절대 수치를 직접 얻을 수 있어서","NK세포만 따로 분리할 수 있어서"],
+a:1,e:"CLSI 지침(H42-A2)이 권장하는 방법입니다. 결론은 «림프구아형검사의 gating에는 CD45가 필수»입니다."},
+{t:"각 세포와 표지자를 바르게 짝지은 것은?",s:"슬라이드 35",
+o:["보조 T세포: CD3+CD8+","세포독성 T세포: CD3+CD4+","B세포: CD19+","NK세포: CD3+CD16+/CD56+","전체 T세포: CD19+"],
+a:2,e:"보조 T세포는 CD3+CD4+, 세포독성 T세포는 CD3+CD8+, NK세포는 CD3− CD16+/CD56+, 전체 T세포는 CD3+입니다."},
+{t:"간경변 환자에서 CD4+ T세포의 백분율은 정상이지만 절대 수는 낮았다. 해석으로 가장 적절한 것은?",s:"슬라이드 57~58",
+o:["백분율이 정상이므로 면역능이 유지되고 있다.","검사 오류이므로 재검한다.","백분율은 분모에 의존하는 구성비이므로 절대 수를 우선해 해석한다.","절대 수는 백분율로 환산해서 해석한다.","두 수치는 서로 바꿔 쓸 수 있다."],
+a:2,e:"림프구 감소·면역억제 상태에서는 절대 수를 우선합니다. 검사가 올바르게 수행됐다면 두 수치의 불일치는 오류가 아니라 생물학적 신호입니다."},
+{t:"급성백혈병 blast의 계열을 정하는 대표 표지자를 바르게 짝지은 것은?",s:"슬라이드 71~73, 80, 98",
+o:["골수계(AML): MPO","B 계열: 세포질 CD3","T 계열: CD19","골수계(AML): TdT","B 계열: CD7"],
+a:0,e:"MPO는 골수계에 가장 특이적입니다. B 계열은 CD19·CD10 등, T 계열은 세포질 CD3-ε이 가장 특이적입니다. TdT는 blast의 존재를 보여주지만 계열은 정하지 못합니다."}
+];
+const box=document.getElementById("quiz");
+Q.forEach((q,i)=>{
+ let h=`<div class="q"><h2>문제 ${i+1}. ${q.t}</h2><div class="src">${q.s}</div>`;
+ q.o.forEach((o,j)=>h+=`<label id="l${i}_${j}"><input type="radio" name="q${i}" value="${j}"> ${"①②③④⑤"[j]} ${o}</label>`);
+ h+=`<div class="exp" id="e${i}"></div></div>`;
+ box.insertAdjacentHTML("beforeend",h);
+});
+function grade(){
+ let n=0;
+ Q.forEach((q,i)=>{
+  const c=document.querySelector(`input[name=q${i}]:checked`);
+  const v=c?+c.value:-1;
+  document.getElementById(`l${i}_${q.a}`).classList.add("ok");
+  if(v===q.a)n++; else if(v>=0)document.getElementById(`l${i}_${v}`).classList.add("no");
+  const e=document.getElementById("e"+i);
+  e.style.display="block";
+  e.textContent=(v===q.a?"정답! ":"정답은 "+"①②③④⑤"[q.a]+"입니다. ")+q.e;
+ });
+ document.getElementById("result").textContent=`점수: ${n} / ${Q.length}`;
+}
+</script>
+</body>
+</html>
